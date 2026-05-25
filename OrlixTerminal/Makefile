@@ -53,7 +53,7 @@ run:
 			sleep 0.1; \
 		done; \
 		grep -F -q 'sh-5.3# ' "$$runtime_log" || { echo "Bash prompt did not appear in OrlixTerminal runtime log: $$runtime_log" >&2; exit 1; }; \
-		proof_text=$$'echo ORLIX_SHELL_ECHO_OK; pwd; cd /tmp && pwd && echo ORLIX_CD_TMP_OK; echo ORLIX_REDIRECT_OK > /tmp/orlix-proof.txt; read ORLIX_REDIRECT_VALUE < /tmp/orlix-proof.txt; echo $$ORLIX_REDIRECT_VALUE; printf "ORLIX_PIPE_OK\\n" | while read line; do echo $$line; done; /bin/sh -c "exit 7"; echo ORLIX_EXIT_STATUS_$$?; trap "echo ORLIX_SIGNAL_OK" TERM; kill -TERM $$$$; echo ORLIX_SHELL_PROOF_END\n'; \
+		proof_text=$$'echo ORLIX_SHELL_ECHO_OK; pwd; cd /tmp && pwd && echo ORLIX_CD_TMP_OK; echo ORLIX_REDIRECT_OK > /tmp/orlix-proof.txt; read ORLIX_REDIRECT_VALUE < /tmp/orlix-proof.txt; echo $$ORLIX_REDIRECT_VALUE; printf "ORLIX_PIPE_OK\\n" | while read line; do echo $$line; done; /bin/sh -c "exit 7"; echo ORLIX_EXIT_STATUS_$$?; trap "echo ORLIX_SIGNAL_OK" TERM; kill -TERM $$$$; printf "{}\\n" | /usr/bin/jq -M -c ".orlix = true"; echo ORLIX_JQ_PROOF_END; echo ORLIX_SHELL_PROOF_END\n'; \
 		"$(XCODEBUILD_MCP)" ui-automation type-text --simulator-id "$$simulator_id" --text "$$proof_text" --output json >/dev/null; \
 		for _ in $$(seq 1 $(ORLIX_TERMINAL_SHELL_PROOF_WAIT_TICKS)); do \
 			if grep -E -q 'Kernel panic|hosted user trap|Darwin syscall|Read-only file system' "$$runtime_log"; then break; fi; \
@@ -64,7 +64,7 @@ run:
 			echo "OrlixTerminal shell proof reported failure: $$runtime_log" >&2; \
 			exit 1; \
 		fi; \
-		for marker in ORLIX_SHELL_ECHO_OK ORLIX_CD_TMP_OK ORLIX_REDIRECT_OK ORLIX_PIPE_OK ORLIX_EXIT_STATUS_7 ORLIX_SIGNAL_OK ORLIX_SHELL_PROOF_END; do \
+		for marker in ORLIX_SHELL_ECHO_OK ORLIX_CD_TMP_OK ORLIX_REDIRECT_OK ORLIX_PIPE_OK ORLIX_EXIT_STATUS_7 ORLIX_SIGNAL_OK '{"orlix":true}' ORLIX_JQ_PROOF_END ORLIX_SHELL_PROOF_END; do \
 			grep -F -q "$$marker" "$$runtime_log" || { echo "missing Bash proof marker $$marker in $$runtime_log" >&2; exit 1; }; \
 		done; \
 		echo "verified OrlixTerminal Bash proof in simulator log: $$runtime_log"; \
